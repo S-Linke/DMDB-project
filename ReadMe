@@ -1,0 +1,74 @@
+Remove duplicates from restaurant dataset and compare to goldstandard
+
+This programm detects duplicates from the dataset restaurants.tsv (available to download for free) and compares the found
+duplicates to the goldstandard (also available to download).
+It calculates and gives out the recall, precision, f_score and accuracy.
+The cleaned data is saved in a new tsv file named 'restaurants_cleaned.tsv' and exported to Mongo DB Atlas.
+
+Before you run the code, make sure you have the tsv files restaurants.tsv, goldstandard.tsv and restaurants_NDPL.tsv downloaded from
+https://hpi.de/naumann/projects/repeatability/datasets/restaurants-dataset.html
+and named correctly.
+They are already downloaded correctly in the Repository in GitHub
+restaurants.tsv: Restaurant dataset > Dataset > Same version, with lower-cased values and with special character removed. (864 objects - TSV format)
+goldstandard: Restaurant dataset > Duplicates > A list of all provided duplicates. (112 objects - TSV format)
+nonduplicates: Restaurant dataset > Non-duplicates > Using an updated, further simplified approach across datasets. (1,120 objects - TSV format)
+
+To connect to MongoDB and run code:
+URL: analytics
+password: analytics-password
+insert password into <password>, file 'import_csvfile.py', line 7
+
+
+Here is a description of the different files:
+
+restaurants_main.py:
+    The tsv files are imported.
+    This is The file with the main function. It calls all the other functions.
+    -create new column real_id with function partition
+    -get column names and data types and print them
+    -create csv file id_duplicates and fill it with id1 from duplicates
+    -then create csv file id_files and fill it with data from id_duplicates and add column id2 with data from list id2
+    -compare id_duplicates to goldstandard
+    -remove duplicates
+    -drop column real_id, save new csv file 'restaurants_cleaned'
+    -import into MongoDB
+
+import_csvfile.py:
+    -This function making a connection to Mongo DB Atlas and helping to export the file in the filepath to MongoDB
+    -The csv file is first converted into a JSON document
+
+compare.py:
+    -In this file there are several functions which compare the cell values in the columns to find duplicates and fuzzy duplicates.
+    -The functions are returning boolean values
+    -return 'True' if the indexes r1, r2 from the given column match, else return 'False'
+    -The function 'same_restaurant' is calling all the other functions in this file and is returning 'True' if the values from row r1, r2 from certain columns match
+    -it is not necessary for the values in all columns to match
+
+partition.py:
+    -This function is a recursive algorithm to find duplicates in a data frame
+    -It takes a data frame and a match function as parameters
+    -The find_partition() is executed for the length of the data frame with a while loop
+    -the data frame is appended with another column 'partition'
+    -If the match function returns true for the values r1, r2, the same value is saved in the 'partition' column
+    -finally a panda series with the 'partition_id' is returned
+
+calculate_ratios.py:
+    -In this function the True Positive, True Negative, False Positive and False Negative are calculated by using a for-loop
+    -After that the different ratios are calculated.
+
+restaurants.tsv:
+ This is the dataset that has to be cleaned.
+
+goldstandard.tsv:
+ This file contains two columns 'id1' and'id2'.
+ These are the ids from the duplicates from the gold standard.
+
+id_duplicates.tsv:
+ This file only contains one column with 'id1' from the found duplicates.
+ It will be appended in the next step.
+
+id_files.tsv:
+ This file appends 'id_duplicates.tsv' with the column 'id2' and will be used to be compared to the gold standard.
+
+restaurants_cleaned.tsv
+ This is the cleaned dataset that is exported into Mongo DB
